@@ -1,0 +1,237 @@
+================================================================================
+SMART SERVICE MARKETPLACE — API DOCUMENTATION
+================================================================================
+Base URL: http://localhost:5000
+Auth Header: Authorization: Bearer <your_jwt_token>
+
+Total Endpoints: 35+
+
+================================================================================
+AUTHENTICATION APIs (/api/auth)
+================================================================================
+
+POST /api/auth/register
+Body: { "name", "email", "password", "role": "client|provider", "skills", "portfolio", "location" }
+Response: { success, token, data: user }
+
+POST /api/auth/login
+Body: { "email", "password" }
+Response: { success, token, data: user }
+
+POST /api/auth/logout          [Protected]
+Response: { success, message }
+
+GET  /api/auth/profile         [Protected]
+Response: { success, data: user }
+
+PUT  /api/auth/profile         [Protected]
+Body: { name, email, password, skills, portfolio, profileImage, location }
+Response: { success, data: user }
+
+================================================================================
+USER APIs (/users) — Preserved from Assignment-2/3
+================================================================================
+
+GET    /users
+GET    /users/:id
+POST   /users
+PUT    /users/:id
+DELETE /users/:id
+GET    /users/:id/services
+
+POST /users body example:
+{
+  "name": "John",
+  "email": "john@example.com",
+  "password": "password123",
+  "role": "client",
+  "location": "Karachi"
+}
+
+================================================================================
+SERVICE APIs (/services) 
+================================================================================
+
+GET    /services                    → All 50 services from MongoDB
+GET    /services/search             → ?title=&category=&location=&price=&providerName=
+GET    /services/:id
+POST   /services
+PUT    /services/:id
+DELETE /services/:id
+
+POST /services body example:
+{
+  "title": "Web Design",
+  "description": "Modern website",
+  "price": 5000,
+  "category": "Design",
+  "providerName": "Ali",
+  "rating": 4.5,
+  "location": "Karachi",
+  "availability": true,
+  "userId": "<USER_OBJECT_ID>"
+}
+
+Note: userId, user, or createdBy all accepted for owner reference.
+
+================================================================================
+BOOKING APIs (/api/bookings) — All Protected
+================================================================================
+
+POST   /api/bookings
+Body:  { "service": "<SERVICE_ID>", "bookingDate": "2026-01-15" }
+Response: status starts as "Pending"
+
+GET    /api/bookings
+GET    /api/bookings/:id
+PUT    /api/bookings/:id/status
+Body:  { "status": "Pending|Accepted|Completed|Cancelled" }
+DELETE /api/bookings/:id
+
+Order Tracking Flow:
+Pending → Accepted → Completed
+              ↘ Cancelled
+
+================================================================================
+REVIEW APIs (/api/reviews)
+================================================================================
+
+GET    /api/reviews                 → Public (optional ?service=&user=)
+GET    /api/reviews/:id             → Public
+POST   /api/reviews                 [Protected]
+PUT    /api/reviews/:id             [Protected]
+DELETE /api/reviews/:id             [Protected]
+
+POST body:
+{ "service": "<SERVICE_ID>", "rating": 5, "comment": "Great work!" }
+
+Average service rating updates automatically after add/update/delete.
+
+================================================================================
+MESSAGE APIs (/api/messages) — All Protected
+================================================================================
+
+POST   /api/messages
+Body:  { "receiver": "<USER_ID>", "message": "Hello!" }
+
+GET    /api/messages                → All messages for logged-in user
+GET    /api/messages/conversation/:userId
+
+================================================================================
+PAYMENT APIs (/api/payments) — All Protected (Simulation)
+================================================================================
+
+POST   /api/payments
+Body:  { "service": "<SERVICE_ID>", "amount": 5000 }
+Status: "Pending"
+
+GET    /api/payments
+GET    /api/payments/:id
+PUT    /api/payments/:id/pay        → Simulates payment → status "Paid"
+PUT    /api/payments/:id/status
+Body:  { "status": "Pending|Paid" }
+
+================================================================================
+ADMIN APIs (/api/admin) — Protected + Admin Only
+================================================================================
+
+GET    /api/admin/users
+DELETE /api/admin/users/:id
+GET    /api/admin/services
+DELETE /api/admin/services/:id
+
+Admin credentials: admin@marketplace.com / admin123
+
+================================================================================
+SOCKET.IO CHAT
+================================================================================
+
+Connect: io("http://localhost:5000", { auth: { token: "JWT_TOKEN" } })
+
+Emit events:
+  join_chat     → { partnerId: "<USER_ID>" }
+  send_message  → { receiver: "<USER_ID>", message: "Hi" }
+
+Listen events:
+  joined_chat       → confirmation
+  receive_message   → incoming message object
+  error_message     → error details
+
+================================================================================
+SEARCH & FILTER 
+================================================================================
+
+GET /services/search?title=web
+GET /services/search?category=Design
+GET /services/search?location=Karachi
+GET /services/search?price=5000
+GET /services/search?providerName=Ali
+
+Combine multiple filters in one request.
+
+================================================================================
+TESTING WITH POSTMAN / THUNDER CLIENT
+================================================================================
+
+Step 1: Register or Login
+  POST http://localhost:5000/api/auth/login
+  Body: { "email": "ali.khan@example.com", "password": "password123" }
+  Copy the "token" from response
+
+Step 2: Add token to headers
+  Authorization: Bearer <paste_token_here>
+
+Step 3: Test protected routes
+  GET  http://localhost:5000/api/auth/profile
+  POST http://localhost:5000/api/bookings
+  GET  http://localhost:5000/services  (no token needed)
+
+Step 4: Test public routes (no token)
+  GET http://localhost:5000/
+  GET http://localhost:5000/services
+  GET http://localhost:5000/services/search?category=Design
+
+================================================================================
+SAMPLE RESPONSE FORMAT
+================================================================================
+
+Success:
+{ "success": true, "count": 50, "data": [...] }
+
+Error:
+{ "success": false, "error": "Error message here" }
+
+================================================================================
+SEED DATA
+================================================================================
+
+npm run seed:force
+
+Creates:
+- 20 users from Assignment-2 (password: password123)
+- 1 admin user (admin@marketplace.com / admin123)
+- 50 services from Assignment-1 (ids 1-50 as legacyId)
+
+================================================================================
+npm COMMANDS
+================================================================================
+
+npm install        → install dependencies
+npm run seed:force → reset and load sample data
+npm start          → start server + socket.io
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+express     → web framework
+mongoose    → MongoDB ODM
+bcryptjs    → password hashing
+jsonwebtoken → JWT auth
+socket.io   → real-time chat
+cors        → cross-origin requests
+dotenv      → environment variables
+
+================================================================================
+END OF API DOCUMENTATION
+================================================================================
